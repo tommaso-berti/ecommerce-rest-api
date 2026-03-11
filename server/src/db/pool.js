@@ -1,4 +1,5 @@
 import pg from 'pg'
+import process from 'node:process'
 
 const { Pool } = pg
 
