@@ -28,6 +28,18 @@ CREATE TABLE products (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- SAMPLE PRODUCTS
+
+INSERT INTO products (name, description, price, stock) VALUES
+  ('Luna Lamp', 'Compact table lamp with warm light and minimal design.', 49.90, 30),
+  ('Forma Chair', 'Ergonomic home office chair with soft finish.', 129.00, 18),
+  ('Terra Vase', 'Decorative ceramic vase for modern interiors.', 34.50, 45),
+  ('Nord Shelf', 'Light wood shelf for books and small decor.', 89.99, 12),
+  ('Calm Blanket', 'Soft recycled-fabric blanket for everyday comfort.', 59.00, 25),
+  ('Moss Candle', 'Scented candle with green and woody notes.', 19.90, 60),
+  ('Urban Bottle', 'Stainless steel reusable bottle, 750ml.', 24.90, 50),
+  ('Echo Headphones', 'Wireless over-ear headphones with clear sound.', 159.00, 14);
+
 -- CARTS
 
 CREATE TABLE carts (

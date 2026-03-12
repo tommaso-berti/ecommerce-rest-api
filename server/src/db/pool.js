@@ -1,5 +1,14 @@
+import dotenv from 'dotenv'
+import path from 'node:path'
 import pg from 'pg'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const rootEnvPath = path.resolve(__dirname, '../../../.env')
+
+dotenv.config({ path: rootEnvPath })
 
 const { Pool } = pg
 
