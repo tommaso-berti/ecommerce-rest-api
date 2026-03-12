@@ -1,10 +1,10 @@
 import { Router } from 'express'
 import authRouter from './auth.routes.js'
-import cartRouter from './cart.js'
-import checkoutRouter from './checkout.js'
+import cartRouter from './cart.routes.js'
+import checkoutRouter from './checkout.routes.js'
 import healthRouter from './health.routes.js'
-import ordersRouter from './orders.js'
-import productsRouter from './products.js'
+import ordersRouter from './orders.routes.js'
+import productsRouter from './products.routes.js'
 
 const router = Router()
 
