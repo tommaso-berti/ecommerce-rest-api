@@ -14,6 +14,7 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
   })
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
+  const [googlePlaceholderMessage, setGooglePlaceholderMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const searchParams = new URLSearchParams(location.search)
@@ -66,6 +67,7 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
     setSubmitError('')
+    setGooglePlaceholderMessage('')
 
     if (!validateForm()) {
       return
@@ -91,7 +93,9 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
   const isFormBusy = isSubmitting || isAuthBusy
 
   const handleGoogleLogin = () => {
-    window.location.assign('/api/auth/google')
+    setGooglePlaceholderMessage(
+      'Google login is not implemented yet. Please use username/email login.',
+    )
   }
 
   return (
@@ -110,6 +114,9 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
 
           {oauthErrorMessage ? <Alert severity="error">{oauthErrorMessage}</Alert> : null}
           {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+          {googlePlaceholderMessage ? (
+            <Alert severity="info">{googlePlaceholderMessage}</Alert>
+          ) : null}
 
           <TextField
             label="Username or Email"
