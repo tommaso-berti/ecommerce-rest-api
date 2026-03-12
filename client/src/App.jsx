@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
-import { products } from './data/products'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import ProductPage from './pages/ProductPage'
 import RegisterPage from './pages/RegisterPage'
 import { getCurrentUser, logout as logoutUser } from './services/auth'
+import { getProducts } from './services/products'
 
 function App() {
   const navigate = useNavigate()
   const [cartItems, setCartItems] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [products, setProducts] = useState([])
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [productsError, setProductsError] = useState('')
   const [currentUser, setCurrentUser] = useState(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -43,6 +47,44 @@ function App() {
     }
 
     bootstrapCurrentSession()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadProducts() {
+      try {
+        const response = await getProducts()
+        if (!isMounted) {
+          return
+        }
+
+        const normalizedProducts = (response.products ?? []).map((product) => ({
+          ...product,
+          price: Number(product.price),
+        }))
+
+        setProducts(normalizedProducts)
+        setProductsError('')
+      } catch (error) {
+        if (!isMounted) {
+          return
+        }
+
+        setProducts([])
+        setProductsError(error.message || 'Errore nel caricamento dei prodotti.')
+      } finally {
+        if (isMounted) {
+          setProductsLoading(false)
+        }
+      }
+    }
+
+    loadProducts()
 
     return () => {
       isMounted = false
@@ -118,7 +160,18 @@ function App() {
       onRemoveFromCart={handleRemoveFromCart}
     >
       <Routes>
-        <Route path="/" element={<HomePage products={products} onAddToCart={handleAddToCart} />} />
+        <Route
+          path="/"
+          element={
+            <HomePage
+              products={products}
+              productsError={productsError}
+              productsLoading={productsLoading}
+              onAddToCart={handleAddToCart}
+            />
+          }
+        />
+        <Route path="/products/:productId" element={<ProductPage onAddToCart={handleAddToCart} />} />
         <Route
           path="/login"
           element={

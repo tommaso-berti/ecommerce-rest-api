@@ -1,8 +1,8 @@
 import BoltRoundedIcon from '@mui/icons-material/BoltRounded'
-import { Box, Chip, Stack, Typography } from '@mui/material'
+import { Alert, Box, Chip, CircularProgress, Stack, Typography } from '@mui/material'
 import ProductGrid from '../components/ProductGrid'
 
-function HomePage({ products, onAddToCart }) {
+function HomePage({ products, productsError, productsLoading, onAddToCart }) {
   return (
     <Stack spacing={5}>
       <Box
@@ -24,8 +24,7 @@ function HomePage({ products, onAddToCart }) {
             Una vetrina e-commerce pulita, pronta per collegarsi alla tua REST API.
           </Typography>
           <Typography variant="body1" sx={{ color: 'rgba(248,250,252,0.84)' }}>
-            Catalogo mockato, carrello laterale e routing base: abbastanza semplice da estendere, già utile per
-            iniziare il frontend.
+            Catalogo live dal backend, carrello laterale e routing base: una base solida per evolvere il frontend.
           </Typography>
         </Stack>
       </Box>
@@ -37,12 +36,29 @@ function HomePage({ products, onAddToCart }) {
               Prodotti in evidenza
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Mock data locali, facilmente sostituibili con fetch verso backend.
+              Dati caricati da API REST.
             </Typography>
           </Box>
         </Box>
 
-        <ProductGrid products={products} onAddToCart={onAddToCart} />
+        {productsLoading ? (
+          <Box className="flex items-center gap-3 py-6">
+            <CircularProgress size={24} />
+            <Typography variant="body2" color="text.secondary">
+              Caricamento prodotti...
+            </Typography>
+          </Box>
+        ) : null}
+
+        {!productsLoading && productsError ? <Alert severity="error">{productsError}</Alert> : null}
+
+        {!productsLoading && !productsError && products.length === 0 ? (
+          <Alert severity="info">Nessun prodotto disponibile al momento.</Alert>
+        ) : null}
+
+        {!productsLoading && !productsError && products.length > 0 ? (
+          <ProductGrid products={products} onAddToCart={onAddToCart} />
+        ) : null}
       </Box>
     </Stack>
   )
