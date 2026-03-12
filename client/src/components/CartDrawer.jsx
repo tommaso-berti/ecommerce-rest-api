@@ -1,4 +1,6 @@
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
+import AddRoundedIcon from '@mui/icons-material/AddRounded'
+import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded'
 import RemoveShoppingCartRoundedIcon from '@mui/icons-material/RemoveShoppingCartRounded'
 import {
   Box,
@@ -10,10 +12,19 @@ import {
   ListItem,
   ListItemText,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material'
 
-function CartDrawer({ cartItems, cartSubtotal, isOpen, onCheckout, onClose, onRemoveItem }) {
+function CartDrawer({
+  cartItems,
+  cartSubtotal,
+  isOpen,
+  onCheckout,
+  onClose,
+  onDecreaseItem,
+  onIncreaseItem,
+}) {
   return (
     <Drawer anchor="right" open={isOpen} onClose={onClose}>
       <Box sx={{ width: { xs: 320, sm: 380 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -49,15 +60,27 @@ function CartDrawer({ cartItems, cartSubtotal, isOpen, onCheckout, onClose, onRe
                   key={item.id}
                   disablePadding
                   secondaryAction={
-                    <Button color="inherit" onClick={() => onRemoveItem(item.id)}>
-                      Rimuovi
-                    </Button>
+                    <Box className="flex items-center gap-1">
+                      <Tooltip title="Riduci quantità">
+                        <IconButton size="small" onClick={() => onDecreaseItem(item.id)}>
+                          <RemoveRoundedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Typography variant="body2" sx={{ minWidth: 28, textAlign: 'center' }}>
+                        {item.quantity}
+                      </Typography>
+                      <Tooltip title="Aumenta quantità">
+                        <IconButton size="small" onClick={() => onIncreaseItem(item.id)}>
+                          <AddRoundedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   }
                   sx={{ py: 1.5 }}
                 >
                   <ListItemText
                     primary={item.name}
-                    secondary={`Qty ${item.quantity} • EUR ${(item.price * item.quantity).toFixed(2)}`}
+                    secondary={`EUR ${(item.price * item.quantity).toFixed(2)}`}
                     primaryTypographyProps={{ fontWeight: 600 }}
                   />
                 </ListItem>

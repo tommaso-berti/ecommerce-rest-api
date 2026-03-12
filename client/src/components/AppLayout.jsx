@@ -13,9 +13,10 @@ function AppLayout({
   isCartOpen,
   onCheckout,
   onCloseCart,
+  onDecreaseFromCart,
+  onIncreaseFromCart,
   onLogout,
   onOpenCart,
-  onRemoveFromCart,
 }) {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -43,7 +44,8 @@ function AppLayout({
         isOpen={isCartOpen}
         onCheckout={onCheckout}
         onClose={onCloseCart}
-        onRemoveItem={onRemoveFromCart}
+        onDecreaseItem={onDecreaseFromCart}
+        onIncreaseItem={onIncreaseFromCart}
       />
     </Box>
   )

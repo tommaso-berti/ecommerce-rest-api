@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { Alert, Snackbar } from '@mui/material'
+import { useCallback, useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
 import CheckoutPage from './pages/CheckoutPage'
@@ -17,6 +18,7 @@ function App() {
   const [products, setProducts] = useState([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [productsError, setProductsError] = useState('')
+  const [cartFeedback, setCartFeedback] = useState({ open: false, message: '' })
   const [currentUser, setCurrentUser] = useState(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -55,43 +57,33 @@ function App() {
     }
   }, [])
 
-  useEffect(() => {
-    let isMounted = true
+  const reloadProducts = useCallback(async ({ showLoader = true } = {}) => {
+    if (showLoader) {
+      setProductsLoading(true)
+    }
 
-    async function loadProducts() {
-      try {
-        const response = await getProducts()
-        if (!isMounted) {
-          return
-        }
+    try {
+      const response = await getProducts()
+      const normalizedProducts = (response.products ?? []).map((product) => ({
+        ...product,
+        price: Number(product.price),
+      }))
 
-        const normalizedProducts = (response.products ?? []).map((product) => ({
-          ...product,
-          price: Number(product.price),
-        }))
-
-        setProducts(normalizedProducts)
-        setProductsError('')
-      } catch (error) {
-        if (!isMounted) {
-          return
-        }
-
-        setProducts([])
-        setProductsError(error.message || 'Errore nel caricamento dei prodotti.')
-      } finally {
-        if (isMounted) {
-          setProductsLoading(false)
-        }
+      setProducts(normalizedProducts)
+      setProductsError('')
+    } catch (error) {
+      setProducts([])
+      setProductsError(error.message || 'Errore nel caricamento dei prodotti.')
+    } finally {
+      if (showLoader) {
+        setProductsLoading(false)
       }
     }
-
-    loadProducts()
-
-    return () => {
-      isMounted = false
-    }
   }, [])
+
+  useEffect(() => {
+    reloadProducts()
+  }, [reloadProducts])
 
   const handleAddToCart = (product) => {
     setCartItems((currentItems) => {
@@ -106,16 +98,27 @@ function App() {
       return [...currentItems, { ...product, quantity: 1 }]
     })
 
-    setIsCartOpen(true)
+    setCartFeedback({
+      open: true,
+      message: `${product.name} aggiunto al carrello`,
+    })
   }
 
-  const handleRemoveFromCart = (productId) => {
+  const handleDecreaseCartItem = (productId) => {
     setCartItems((currentItems) =>
       currentItems
         .map((item) =>
           item.id === productId ? { ...item, quantity: item.quantity - 1 } : item,
         )
         .filter((item) => item.quantity > 0),
+    )
+  }
+
+  const handleIncreaseCartItem = (productId) => {
+    setCartItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === productId ? { ...item, quantity: item.quantity + 1 } : item,
+      ),
     )
   }
 
@@ -155,10 +158,12 @@ function App() {
   const handleCheckoutSuccess = () => {
     setCartItems([])
     setIsCartOpen(false)
+    reloadProducts({ showLoader: false })
   }
 
   return (
-    <AppLayout
+    <>
+      <AppLayout
       cartItems={cartItems}
       cartItemCount={cartItemCount}
       cartSubtotal={cartSubtotal}
@@ -168,9 +173,10 @@ function App() {
       isCartOpen={isCartOpen}
       onCheckout={handleOpenCheckout}
       onCloseCart={() => setIsCartOpen(false)}
+      onDecreaseFromCart={handleDecreaseCartItem}
+      onIncreaseFromCart={handleIncreaseCartItem}
       onLogout={handleLogout}
       onOpenCart={() => setIsCartOpen(true)}
-      onRemoveFromCart={handleRemoveFromCart}
     >
       <Routes>
         <Route
@@ -214,7 +220,18 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </AppLayout>
+      </AppLayout>
+      <Snackbar
+        open={cartFeedback.open}
+        autoHideDuration={1800}
+        onClose={() => setCartFeedback({ open: false, message: '' })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
+          {cartFeedback.message}
+        </Alert>
+      </Snackbar>
+    </>
   )
 }
 

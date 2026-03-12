@@ -154,7 +154,7 @@ export async function checkout(req, res, next) {
       0,
     )
 
-    const orderResult = await client.query(insertOrderQuery, [userId, 'pending', totalAmount])
+    const orderResult = await client.query(insertOrderQuery, [userId, 'shipped', totalAmount])
     const order = orderResult.rows[0]
 
     for (const item of items) {

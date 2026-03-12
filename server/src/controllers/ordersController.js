@@ -15,10 +15,11 @@ const selectOrderByIdForUserQuery = `
 `
 
 const selectOrderItemsQuery = `
-  SELECT id, order_id, product_id, quantity, price_at_purchase
-  FROM order_items
-  WHERE order_id = $1
-  ORDER BY id ASC
+  SELECT oi.id, oi.order_id, oi.product_id, p.name AS product_name, oi.quantity, oi.price_at_purchase
+  FROM order_items oi
+  JOIN products p ON p.id = oi.product_id
+  WHERE oi.order_id = $1
+  ORDER BY oi.id ASC
 `
 
 function parseUserId(req) {
@@ -77,4 +78,3 @@ export async function getOrderById(req, res, next) {
     return next(error)
   }
 }
-

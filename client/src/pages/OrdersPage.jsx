@@ -197,7 +197,9 @@ function OrdersPage({ currentUser, isAuthLoading }) {
                               className="flex items-center justify-between gap-3"
                               sx={{ py: 0.75, borderBottom: '1px solid #f1f5f9' }}
                             >
-                              <Typography variant="body2">Prodotto #{item.product_id}</Typography>
+                              <Typography variant="body2">
+                                {item.product_name || `Prodotto #${item.product_id}`}
+                              </Typography>
                               <Typography variant="body2" color="text.secondary">
                                 Qty {item.quantity}
                               </Typography>
