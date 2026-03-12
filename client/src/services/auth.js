@@ -6,3 +6,20 @@ export function register(payload) {
     body: JSON.stringify(payload),
   })
 }
+
+export function login(payload) {
+  return request('/api/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function logout() {
+  return request('/api/logout', {
+    method: 'POST',
+  })
+}
+
+export function getCurrentUser() {
+  return request('/api/me')
+}

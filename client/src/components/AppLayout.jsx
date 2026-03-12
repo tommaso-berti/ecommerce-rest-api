@@ -7,14 +7,25 @@ function AppLayout({
   cartItems,
   cartItemCount,
   cartSubtotal,
+  currentUser,
+  isAuthBusy,
+  authError,
   isCartOpen,
   onCloseCart,
+  onLogout,
   onOpenCart,
   onRemoveFromCart,
 }) {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Header cartItemCount={cartItemCount} onOpenCart={onOpenCart} />
+      <Header
+        authError={authError}
+        cartItemCount={cartItemCount}
+        currentUser={currentUser}
+        isAuthBusy={isAuthBusy}
+        onLogout={onLogout}
+        onOpenCart={onOpenCart}
+      />
       <Box
         component="main"
         className="py-8"
