@@ -11,6 +11,23 @@ const checkoutRouter = Router()
  *     tags: [Checkout]
  *     security:
  *       - cookieAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     product_id:
+ *                       type: integer
+ *                     quantity:
+ *                       type: integer
+ *                   required: [product_id, quantity]
  *     responses:
  *       200:
  *         description: Checkout completed and order created

@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material'
 
-function CartDrawer({ cartItems, cartSubtotal, isOpen, onClose, onRemoveItem }) {
+function CartDrawer({ cartItems, cartSubtotal, isOpen, onCheckout, onClose, onRemoveItem }) {
   return (
     <Drawer anchor="right" open={isOpen} onClose={onClose}>
       <Box sx={{ width: { xs: 320, sm: 380 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -73,8 +73,8 @@ function CartDrawer({ cartItems, cartSubtotal, isOpen, onClose, onRemoveItem }) 
                   EUR {cartSubtotal.toFixed(2)}
                 </Typography>
               </Box>
-              <Button variant="contained" size="large" disabled>
-                Checkout disponibile prossimamente
+              <Button variant="contained" size="large" onClick={onCheckout}>
+                Vai al checkout
               </Button>
             </Stack>
           </>

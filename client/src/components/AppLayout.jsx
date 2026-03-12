@@ -11,6 +11,7 @@ function AppLayout({
   isAuthBusy,
   authError,
   isCartOpen,
+  onCheckout,
   onCloseCart,
   onLogout,
   onOpenCart,
@@ -40,6 +41,7 @@ function AppLayout({
         cartItems={cartItems}
         cartSubtotal={cartSubtotal}
         isOpen={isCartOpen}
+        onCheckout={onCheckout}
         onClose={onCloseCart}
         onRemoveItem={onRemoveFromCart}
       />

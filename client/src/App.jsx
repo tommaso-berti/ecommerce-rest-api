@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
+import CheckoutPage from './pages/CheckoutPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import OrdersPage from './pages/OrdersPage'
 import ProductPage from './pages/ProductPage'
 import RegisterPage from './pages/RegisterPage'
 import { getCurrentUser, logout as logoutUser } from './services/auth'
@@ -145,6 +147,16 @@ function App() {
     }
   }
 
+  const handleOpenCheckout = () => {
+    setIsCartOpen(false)
+    navigate('/checkout')
+  }
+
+  const handleCheckoutSuccess = () => {
+    setCartItems([])
+    setIsCartOpen(false)
+  }
+
   return (
     <AppLayout
       cartItems={cartItems}
@@ -154,6 +166,7 @@ function App() {
       isAuthBusy={isAuthBusy}
       authError={authError}
       isCartOpen={isCartOpen}
+      onCheckout={handleOpenCheckout}
       onCloseCart={() => setIsCartOpen(false)}
       onLogout={handleLogout}
       onOpenCart={() => setIsCartOpen(true)}
@@ -172,6 +185,22 @@ function App() {
           }
         />
         <Route path="/products/:productId" element={<ProductPage onAddToCart={handleAddToCart} />} />
+        <Route
+          path="/checkout"
+          element={
+            <CheckoutPage
+              cartItems={cartItems}
+              cartSubtotal={cartSubtotal}
+              currentUser={currentUser}
+              isAuthLoading={isAuthLoading}
+              onCheckoutSuccess={handleCheckoutSuccess}
+            />
+          }
+        />
+        <Route
+          path="/orders"
+          element={<OrdersPage currentUser={currentUser} isAuthLoading={isAuthLoading} />}
+        />
         <Route
           path="/login"
           element={

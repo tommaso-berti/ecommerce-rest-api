@@ -17,6 +17,10 @@ const baseNavItems = [
   { label: 'Home', to: '/' },
 ]
 
+const authNavItems = [
+  { label: 'Orders', to: '/orders' },
+]
+
 const guestNavItems = [
   { label: 'Login', to: '/login' },
   { label: 'Register', to: '/register' },
@@ -90,6 +94,24 @@ function Header({ authError, cartItemCount, currentUser, isAuthBusy, onLogout, o
 
             {isAuthenticated ? (
               <>
+                {authNavItems.map((item) => (
+                  <Button
+                    key={item.to}
+                    component={NavLink}
+                    to={item.to}
+                    color="inherit"
+                    sx={{
+                      px: 2,
+                      color: 'text.secondary',
+                      '&.active': {
+                        color: 'primary.main',
+                        bgcolor: 'rgba(15, 118, 110, 0.08)',
+                      },
+                    }}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
                 <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>
                   {currentUser.username}
                 </Typography>
