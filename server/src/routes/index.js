@@ -1,10 +1,12 @@
 import { Router } from 'express'
 import authRouter from './auth.routes.js'
 import healthRouter from './health.routes.js'
+import productsRouter from './products.js'
 
 const router = Router()
 
 router.use('/health', healthRouter)
+router.use(productsRouter)
 router.use(authRouter)
 
 router.get('/error-test', () => {

@@ -22,6 +22,8 @@ Backend base URL: `http://localhost:3001`
 | Method | Path | Description | Auth required |
 | --- | --- | --- | --- |
 | GET | `/api/health` | Health check API | No |
+| GET | `/api/products` | Restituisce tutti i prodotti | No |
+| GET | `/api/products/:productId` | Restituisce un prodotto per id | No |
 | POST | `/api/register` | Registrazione utente (`username`, `email`, `password`) | No |
 | POST | `/api/login` | Login con `identifier` (username/email) + `password` | No |
 | POST | `/api/logout` | Logout e distruzione sessione | Yes (session cookie) |
@@ -57,3 +59,58 @@ Headers for JSON requests:
 `POST /api/logout`
 - No JSON body.
 - Requires session cookie returned by login (`connect.sid`).
+
+### Product routes examples (Postman)
+
+`GET /api/products`
+- No JSON body.
+
+Example response `200`:
+```json
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Luna Lamp",
+      "description": "Compact table lamp with warm light and minimal design.",
+      "price": "49.90",
+      "stock": 30,
+      "created_at": "2026-03-12T11:30:31.450Z"
+    }
+  ]
+}
+```
+
+`GET /api/products/:productId`
+- No JSON body.
+
+Example request:
+- `GET /api/products/1`
+
+Example response `200`:
+```json
+{
+  "product": {
+    "id": 1,
+    "name": "Luna Lamp",
+    "description": "Compact table lamp with warm light and minimal design.",
+    "price": "49.90",
+    "stock": 30,
+    "created_at": "2026-03-12T11:30:31.450Z"
+  }
+}
+```
+
+Example response `400` (invalid id):
+```json
+{
+  "message": "invalid product id"
+}
+```
+
+Example response `404` (not found):
+```json
+{
+  "message": "product not found"
+}
+```
