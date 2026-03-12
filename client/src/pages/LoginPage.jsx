@@ -1,10 +1,12 @@
+import GoogleIcon from '@mui/icons-material/Google'
 import LoginRoundedIcon from '@mui/icons-material/LoginRounded'
-import { Alert, Avatar, Box, Button, Paper, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Avatar, Box, Button, Divider, Paper, Stack, TextField, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { login as loginUser } from '../services/auth'
 
 function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
+  const location = useLocation()
   const navigate = useNavigate()
   const [form, setForm] = useState({
     identifier: '',
@@ -13,6 +15,15 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const searchParams = new URLSearchParams(location.search)
+  const authErrorCode = searchParams.get('authError')
+  const oauthErrorMessage =
+    authErrorCode === 'google_auth_failed'
+      ? 'Autenticazione Google non riuscita. Riprova.'
+      : authErrorCode === 'google_not_configured'
+        ? 'Login con Google non configurato sul server.'
+        : ''
 
   useEffect(() => {
     if (!fieldErrors.identifier && !fieldErrors.password) {
@@ -79,6 +90,10 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
 
   const isFormBusy = isSubmitting || isAuthBusy
 
+  const handleGoogleLogin = () => {
+    window.location.assign('/api/auth/google')
+  }
+
   return (
     <Box className="mx-auto max-w-md py-8">
       <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, border: '1px solid #e2e8f0' }}>
@@ -93,6 +108,7 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
             </Typography>
           </Stack>
 
+          {oauthErrorMessage ? <Alert severity="error">{oauthErrorMessage}</Alert> : null}
           {submitError ? <Alert severity="error">{submitError}</Alert> : null}
 
           <TextField
@@ -119,6 +135,18 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
 
           <Button variant="contained" size="large" type="submit" disabled={isFormBusy}>
             {isSubmitting ? 'Accesso in corso...' : 'Accedi'}
+          </Button>
+
+          <Divider>oppure</Divider>
+
+          <Button
+            variant="outlined"
+            size="large"
+            startIcon={<GoogleIcon />}
+            onClick={handleGoogleLogin}
+            disabled={isFormBusy}
+          >
+            Continua con Google
           </Button>
         </Stack>
       </Paper>

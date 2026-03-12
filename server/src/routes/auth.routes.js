@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt'
+import process from 'node:process'
 import { Router } from 'express'
 import passport from 'passport'
 import { pool } from '../db/pool.js'
@@ -6,6 +7,14 @@ import { pool } from '../db/pool.js'
 const authRouter = Router()
 const SALT_ROUNDS = 10
 const MIN_PASSWORD_LENGTH = 8
+
+function getClientOrigin() {
+  return process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+}
+
+function isGoogleAuthEnabled() {
+  return Boolean(process.env.GOOGLE_CLIENT_ID) && Boolean(process.env.GOOGLE_CLIENT_SECRET)
+}
 
 const existingUserQuery = `
   SELECT id
@@ -19,6 +28,51 @@ const insertUserQuery = `
   VALUES ($1, $2, $3)
   RETURNING id, username, email, created_at
 `
+
+/**
+ * @openapi
+ * /api/auth/google:
+ *   get:
+ *     summary: Start Google OAuth login
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirect to Google consent or back to login when Google OAuth is unavailable
+ */
+authRouter.get('/auth/google', (req, res, next) => {
+  if (!isGoogleAuthEnabled()) {
+    return res.redirect(`${getClientOrigin()}/login?authError=google_not_configured`)
+  }
+
+  return passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    prompt: 'select_account',
+  })(req, res, next)
+})
+
+/**
+ * @openapi
+ * /api/auth/google/callback:
+ *   get:
+ *     summary: Google OAuth callback and session login
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirect to client after login
+ */
+authRouter.get('/auth/google/callback', (req, res, next) => {
+  if (!isGoogleAuthEnabled()) {
+    return res.redirect(`${getClientOrigin()}/login?authError=google_not_configured`)
+  }
+
+  const failureRedirect = `${getClientOrigin()}/login?authError=google_auth_failed`
+
+  return passport.authenticate('google', { failureRedirect })(req, res, next)
+})
+
+authRouter.get('/auth/google/callback', (_req, res) => {
+  return res.redirect(`${getClientOrigin()}/`)
+})
 
 /**
  * @openapi

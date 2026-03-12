@@ -47,6 +47,8 @@ Backend base URL: `http://localhost:3001`
 | POST | `/api/checkout` | Esegue checkout del carrello attivo dell'utente autenticato | Yes (session cookie) |
 | POST | `/api/register` | Registrazione utente (`username`, `email`, `password`) | No |
 | POST | `/api/login` | Login con `identifier` (username/email) + `password` | No |
+| GET | `/api/auth/google` | Avvia login OAuth con Google | No |
+| GET | `/api/auth/google/callback` | Callback OAuth Google (crea sessione e redirect) | No |
 | POST | `/api/logout` | Logout e distruzione sessione | Yes (session cookie) |
 | GET | `/api/me` | Restituisce utente autenticato corrente | Yes (session cookie) |
 | GET | `/api/error-test` | Endpoint di test per error handler | No |
@@ -73,6 +75,14 @@ Headers for JSON requests:
 }
 ```
 
+`GET /api/auth/google`
+- Redirect browser flow to Google OAuth consent screen.
+
+`GET /api/auth/google/callback`
+- OAuth callback endpoint used by Google.
+- On success creates authenticated session and redirects to `${CLIENT_ORIGIN}/`.
+- On failure redirects to `${CLIENT_ORIGIN}/login?authError=google_auth_failed`.
+
 `GET /api/me`
 - No JSON body.
 - Requires session cookie returned by login (`connect.sid`).
@@ -80,6 +90,20 @@ Headers for JSON requests:
 `POST /api/logout`
 - No JSON body.
 - Requires session cookie returned by login (`connect.sid`).
+
+## Google OAuth Setup
+
+Add these variables in root `.env`:
+
+- `CLIENT_ORIGIN` (default suggested: `http://localhost:5173`)
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_CALLBACK_URL` (optional override; default is `${CLIENT_ORIGIN}/api/auth/google/callback`)
+
+In Google Cloud Console:
+
+- Create OAuth 2.0 credentials for Web Application.
+- Add Authorized redirect URI: `http://localhost:5173/api/auth/google/callback` (or your custom callback URL).
 
 ### Product routes examples (Postman)
 
