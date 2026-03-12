@@ -3,6 +3,7 @@ import authRouter from './auth.routes.js'
 import cartRouter from './cart.js'
 import checkoutRouter from './checkout.js'
 import healthRouter from './health.routes.js'
+import ordersRouter from './orders.js'
 import productsRouter from './products.js'
 
 const router = Router()
@@ -10,6 +11,7 @@ const router = Router()
 router.use('/health', healthRouter)
 router.use(productsRouter)
 router.use(cartRouter)
+router.use(ordersRouter)
 router.use(checkoutRouter)
 router.use(authRouter)
 

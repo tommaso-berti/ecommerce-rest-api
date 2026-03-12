@@ -28,6 +28,8 @@ Backend base URL: `http://localhost:3001`
 | POST | `/api/cart` | Crea un nuovo carrello (`user_id`, `status` opzionale) | No |
 | PUT | `/api/cart/:cartId` | Aggiorna un carrello (`user_id`, `status`) | No |
 | DELETE | `/api/cart/:cartId` | Elimina un carrello | No |
+| GET | `/api/orders` | Restituisce gli ordini dell'utente autenticato | Yes (session cookie) |
+| GET | `/api/orders/:orderId` | Restituisce un ordine dell'utente con i relativi items | Yes (session cookie) |
 | POST | `/api/checkout` | Esegue checkout del carrello attivo dell'utente autenticato | Yes (session cookie) |
 | POST | `/api/register` | Registrazione utente (`username`, `email`, `password`) | No |
 | POST | `/api/login` | Login con `identifier` (username/email) + `password` | No |
@@ -262,4 +264,79 @@ Common checkout errors:
 ```
 ```json
 { "message": "insufficient stock for product 2" }
+```
+
+### Orders routes examples (Postman)
+
+`GET /api/orders`
+- No JSON body.
+- Requires authenticated session cookie (`connect.sid`) from `POST /api/login`.
+
+Example response `200`:
+```json
+{
+  "orders": [
+    {
+      "id": 2,
+      "user_id": 1,
+      "status": "pending",
+      "total_amount": "178.90",
+      "created_at": "2026-03-12T13:20:00.000Z"
+    },
+    {
+      "id": 1,
+      "user_id": 1,
+      "status": "paid",
+      "total_amount": "59.00",
+      "created_at": "2026-03-11T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+`GET /api/orders/:orderId`
+- No JSON body.
+- Requires authenticated session cookie (`connect.sid`) from `POST /api/login`.
+
+Example request:
+- `GET /api/orders/2`
+
+Example response `200`:
+```json
+{
+  "order": {
+    "id": 2,
+    "user_id": 1,
+    "status": "pending",
+    "total_amount": "178.90",
+    "created_at": "2026-03-12T13:20:00.000Z"
+  },
+  "items": [
+    {
+      "id": 3,
+      "order_id": 2,
+      "product_id": 1,
+      "quantity": 2,
+      "price_at_purchase": "49.90"
+    },
+    {
+      "id": 4,
+      "order_id": 2,
+      "product_id": 4,
+      "quantity": 1,
+      "price_at_purchase": "79.10"
+    }
+  ]
+}
+```
+
+Common order errors:
+```json
+{ "message": "invalid request context" }
+```
+```json
+{ "message": "invalid order id" }
+```
+```json
+{ "message": "order not found" }
 ```
