@@ -6,8 +6,10 @@ import morgan from 'morgan'
 import passport from 'passport'
 import path from 'node:path'
 import process from 'node:process'
+import swaggerUi from 'swagger-ui-express'
 import { fileURLToPath } from 'node:url'
 import { setupPassport } from './config/passport.js'
+import swaggerSpec from './config/swagger.js'
 import apiRouter from './routes/index.js'
 import { notFound } from './middlewares/notFound.js'
 import { errorHandler } from './middlewares/errorHandler.js'
@@ -40,6 +42,11 @@ app.use(
 )
 app.use(passport.initialize())
 app.use(passport.session())
+
+app.get('/api-docs.json', (_req, res) => {
+  res.status(200).json(swaggerSpec)
+})
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 app.use('/api', apiRouter)
 

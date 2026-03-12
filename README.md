@@ -22,6 +22,13 @@ Direct package commands:
 - `cd client && npm run dev`
 - `cd server && npm run dev`
 
+## Swagger / OpenAPI
+
+With backend running (`cd server && npm run dev`):
+
+- Swagger UI: `http://localhost:3001/api-docs`
+- OpenAPI JSON: `http://localhost:3001/api-docs.json`
+
 ## API Routes (server)
 
 Backend base URL: `http://localhost:3001`

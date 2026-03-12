@@ -20,6 +20,43 @@ const insertUserQuery = `
   RETURNING id, username, email, created_at
 `
 
+/**
+ * @openapi
+ * /api/register:
+ *   post:
+ *     summary: Register a new user account
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AuthRegisterRequest'
+ *     responses:
+ *       201:
+ *         description: User created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid payload
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: User already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Database/server error
+ */
 authRouter.post('/register', async (req, res, next) => {
   try {
     const username = req.body.username?.trim()
@@ -52,6 +89,43 @@ authRouter.post('/register', async (req, res, next) => {
   }
 })
 
+/**
+ * @openapi
+ * /api/login:
+ *   post:
+ *     summary: Login with identifier (username or email) and password
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AuthLoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Missing identifier/password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Database/server error
+ */
 authRouter.post('/login', (req, res, next) => {
   const identifier = req.body.identifier?.trim()
   const password = req.body.password
@@ -79,6 +153,28 @@ authRouter.post('/login', (req, res, next) => {
   })(req, res, next)
 })
 
+/**
+ * @openapi
+ * /api/logout:
+ *   post:
+ *     summary: Logout current session
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: logged out
+ *       500:
+ *         description: Server error
+ */
 authRouter.post('/logout', (req, res, next) => {
   req.logout((error) => {
     if (error) {
@@ -96,6 +192,31 @@ authRouter.post('/logout', (req, res, next) => {
   })
 })
 
+/**
+ * @openapi
+ * /api/me:
+ *   get:
+ *     summary: Get current authenticated user
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 authRouter.get('/me', (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: 'not authenticated' })
@@ -105,4 +226,3 @@ authRouter.get('/me', (req, res) => {
 })
 
 export default authRouter
-
