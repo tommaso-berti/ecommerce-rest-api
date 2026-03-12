@@ -51,7 +51,7 @@ function ProductPage({ onAddToCart }) {
           return
         }
 
-        setErrorMessage(error.message || 'Errore nel caricamento del prodotto.')
+        setErrorMessage(error.message || 'Failed to load product.')
       } finally {
         if (isMounted) {
           setIsLoading(false)
@@ -71,14 +71,14 @@ function ProductPage({ onAddToCart }) {
       <Box className="flex items-center gap-3 py-8">
         <CircularProgress size={24} />
         <Typography variant="body2" color="text.secondary">
-          Caricamento prodotto...
+          Loading product...
         </Typography>
       </Box>
     )
   }
 
   if (isNotFound) {
-    return <Alert severity="warning">Prodotto non trovato.</Alert>
+    return <Alert severity="warning">Product not found.</Alert>
   }
 
   if (errorMessage) {
@@ -86,7 +86,7 @@ function ProductPage({ onAddToCart }) {
   }
 
   if (!product) {
-    return <Alert severity="info">Nessun prodotto disponibile.</Alert>
+    return <Alert severity="info">No product available.</Alert>
   }
 
   return (
@@ -100,7 +100,7 @@ function ProductPage({ onAddToCart }) {
             <Box>
               <Typography variant="h5">{product.name}</Typography>
               <Typography variant="body2" color="text.secondary">
-                ID prodotto: {product.id}
+                Product ID: {product.id}
               </Typography>
             </Box>
           </Stack>
@@ -123,7 +123,7 @@ function ProductPage({ onAddToCart }) {
             onClick={() => onAddToCart(product)}
             sx={{ width: { xs: '100%', sm: 'fit-content' } }}
           >
-            Aggiungi al carrello
+            Add to cart
           </Button>
         </Stack>
       </Paper>

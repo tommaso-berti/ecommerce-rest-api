@@ -21,10 +21,10 @@ function HomePage({ products, productsError, productsLoading, onAddToCart }) {
             sx={{ width: 'fit-content', bgcolor: 'rgba(255,255,255,0.16)', color: 'inherit' }}
           />
           <Typography variant="h4">
-            Una vetrina e-commerce pulita, pronta per collegarsi alla tua REST API.
+            A clean e-commerce storefront ready to connect to your REST API.
           </Typography>
           <Typography variant="body1" sx={{ color: 'rgba(248,250,252,0.84)' }}>
-            Catalogo live dal backend, carrello laterale e routing base: una base solida per evolvere il frontend.
+            Live backend catalog, side cart, and base routing: a solid foundation to evolve your frontend.
           </Typography>
         </Stack>
       </Box>
@@ -33,10 +33,10 @@ function HomePage({ products, productsError, productsLoading, onAddToCart }) {
         <Box className="flex items-end justify-between gap-4">
           <Box>
             <Typography variant="h5" gutterBottom>
-              Prodotti in evidenza
+              Featured products
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Dati caricati da API REST.
+              Data loaded from REST APIs.
             </Typography>
           </Box>
         </Box>
@@ -45,7 +45,7 @@ function HomePage({ products, productsError, productsLoading, onAddToCart }) {
           <Box className="flex items-center gap-3 py-6">
             <CircularProgress size={24} />
             <Typography variant="body2" color="text.secondary">
-              Caricamento prodotti...
+              Loading products...
             </Typography>
           </Box>
         ) : null}
@@ -53,7 +53,7 @@ function HomePage({ products, productsError, productsLoading, onAddToCart }) {
         {!productsLoading && productsError ? <Alert severity="error">{productsError}</Alert> : null}
 
         {!productsLoading && !productsError && products.length === 0 ? (
-          <Alert severity="info">Nessun prodotto disponibile al momento.</Alert>
+          <Alert severity="info">No products available right now.</Alert>
         ) : null}
 
         {!productsLoading && !productsError && products.length > 0 ? (

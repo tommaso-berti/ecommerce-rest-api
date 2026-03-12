@@ -40,7 +40,7 @@ function Header({ authError, cartItemCount, currentUser, isAuthBusy, onLogout, o
     try {
       await onLogout()
     } catch (error) {
-      setLocalLogoutError(error.message || 'Errore durante il logout. Riprova.')
+      setLocalLogoutError(error.message || 'Logout failed. Please try again.')
     }
   }
 

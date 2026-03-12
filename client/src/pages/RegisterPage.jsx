@@ -43,17 +43,17 @@ function RegisterPage() {
     const nextFieldErrors = {}
 
     if (!form.username.trim()) {
-      nextFieldErrors.username = 'Il nome utente è obbligatorio.'
+      nextFieldErrors.username = 'Username is required.'
     }
 
     if (!form.email.trim()) {
-      nextFieldErrors.email = "L'email è obbligatoria."
+      nextFieldErrors.email = 'Email is required.'
     }
 
     if (!form.password) {
-      nextFieldErrors.password = 'La password è obbligatoria.'
+      nextFieldErrors.password = 'Password is required.'
     } else if (form.password.length < MIN_PASSWORD_LENGTH) {
-      nextFieldErrors.password = `La password deve contenere almeno ${MIN_PASSWORD_LENGTH} caratteri.`
+      nextFieldErrors.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`
     }
 
     setFieldErrors(nextFieldErrors)
@@ -78,10 +78,10 @@ function RegisterPage() {
         password: form.password,
       })
 
-      setSuccessMessage('Registrazione completata. Reindirizzamento al login...')
+      setSuccessMessage('Registration completed. Redirecting to login...')
       setForm({ username: '', email: '', password: '' })
     } catch (error) {
-      setSubmitError(error.message || 'Errore durante la registrazione. Riprova.')
+      setSubmitError(error.message || 'Registration failed. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -97,7 +97,7 @@ function RegisterPage() {
             </Avatar>
             <Typography variant="h5">Register</Typography>
             <Typography variant="body2" color="text.secondary" textAlign="center">
-              Crea il tuo account per iniziare a fare acquisti.
+              Create your account to start shopping.
             </Typography>
           </Stack>
 
@@ -105,7 +105,7 @@ function RegisterPage() {
           {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
 
           <TextField
-            label="Nome"
+            label="Username"
             name="username"
             value={form.username}
             onChange={handleInputChange}
@@ -144,7 +144,7 @@ function RegisterPage() {
             type="submit"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Registrazione in corso...' : 'Crea account'}
+            {isSubmitting ? 'Creating account...' : 'Create account'}
           </Button>
         </Stack>
       </Paper>

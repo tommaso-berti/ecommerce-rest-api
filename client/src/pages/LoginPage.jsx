@@ -20,9 +20,9 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
   const authErrorCode = searchParams.get('authError')
   const oauthErrorMessage =
     authErrorCode === 'google_auth_failed'
-      ? 'Autenticazione Google non riuscita. Riprova.'
+      ? 'Google authentication failed. Please try again.'
       : authErrorCode === 'google_not_configured'
-        ? 'Login con Google non configurato sul server.'
+        ? 'Google login is not configured on the server.'
         : ''
 
   useEffect(() => {
@@ -52,11 +52,11 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
     const nextFieldErrors = {}
 
     if (!form.identifier.trim()) {
-      nextFieldErrors.identifier = 'Username o email obbligatori.'
+      nextFieldErrors.identifier = 'Username or email is required.'
     }
 
     if (!form.password) {
-      nextFieldErrors.password = 'La password è obbligatoria.'
+      nextFieldErrors.password = 'Password is required.'
     }
 
     setFieldErrors(nextFieldErrors)
@@ -82,7 +82,7 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
       onLoginSuccess?.(response.user)
       navigate('/', { replace: true })
     } catch (error) {
-      setSubmitError(error.message || 'Errore durante il login. Riprova.')
+      setSubmitError(error.message || 'Login failed. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -104,7 +104,7 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
             </Avatar>
             <Typography variant="h5">Login</Typography>
             <Typography variant="body2" color="text.secondary" textAlign="center">
-              Accedi con username o email e la tua password.
+              Sign in with your username or email and password.
             </Typography>
           </Stack>
 
@@ -112,7 +112,7 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
           {submitError ? <Alert severity="error">{submitError}</Alert> : null}
 
           <TextField
-            label="Username o Email"
+            label="Username or Email"
             name="identifier"
             value={form.identifier}
             onChange={handleInputChange}
@@ -134,10 +134,10 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
           />
 
           <Button variant="contained" size="large" type="submit" disabled={isFormBusy}>
-            {isSubmitting ? 'Accesso in corso...' : 'Accedi'}
+            {isSubmitting ? 'Signing in...' : 'Sign in'}
           </Button>
 
-          <Divider>oppure</Divider>
+          <Divider>or</Divider>
 
           <Button
             variant="outlined"
@@ -146,7 +146,7 @@ function LoginPage({ currentUser, isAuthBusy, onLoginSuccess }) {
             onClick={handleGoogleLogin}
             disabled={isFormBusy}
           >
-            Continua con Google
+            Continue with Google
           </Button>
         </Stack>
       </Paper>

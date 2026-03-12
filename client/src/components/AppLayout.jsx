@@ -11,6 +11,7 @@ function AppLayout({
   isAuthBusy,
   authError,
   isCartOpen,
+  isCartSyncing,
   onCheckout,
   onCloseCart,
   onDecreaseFromCart,
@@ -42,6 +43,7 @@ function AppLayout({
         cartItems={cartItems}
         cartSubtotal={cartSubtotal}
         isOpen={isCartOpen}
+        isSyncing={isCartSyncing}
         onCheckout={onCheckout}
         onClose={onCloseCart}
         onDecreaseItem={onDecreaseFromCart}

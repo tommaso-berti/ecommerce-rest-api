@@ -9,16 +9,22 @@ import OrdersPage from './pages/OrdersPage'
 import ProductPage from './pages/ProductPage'
 import RegisterPage from './pages/RegisterPage'
 import { getCurrentUser, logout as logoutUser } from './services/auth'
+import { deleteMyCartItem, getMyCart, updateMyCartItem } from './services/cart'
 import { getProducts } from './services/products'
 
 function App() {
   const navigate = useNavigate()
   const [cartItems, setCartItems] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isCartSyncing, setIsCartSyncing] = useState(false)
   const [products, setProducts] = useState([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [productsError, setProductsError] = useState('')
-  const [cartFeedback, setCartFeedback] = useState({ open: false, message: '' })
+  const [cartFeedback, setCartFeedback] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  })
   const [currentUser, setCurrentUser] = useState(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -40,7 +46,7 @@ function App() {
         }
 
         if (error.status !== 401) {
-          setAuthError(error.message || 'Errore nel recupero della sessione utente.')
+          setAuthError(error.message || 'Failed to load user session.')
         }
         setCurrentUser(null)
       } finally {
@@ -73,7 +79,7 @@ function App() {
       setProductsError('')
     } catch (error) {
       setProducts([])
-      setProductsError(error.message || 'Errore nel caricamento dei prodotti.')
+      setProductsError(error.message || 'Failed to load products.')
     } finally {
       if (showLoader) {
         setProductsLoading(false)
@@ -85,41 +91,115 @@ function App() {
     reloadProducts()
   }, [reloadProducts])
 
-  const handleAddToCart = (product) => {
-    setCartItems((currentItems) => {
-      const existingItem = currentItems.find((item) => item.id === product.id)
+  const mapCartItemsFromApi = useCallback((items = []) => {
+    return items.map((item) => ({
+      id: Number(item.product_id),
+      name: item.name,
+      description: item.description,
+      price: Number(item.price),
+      stock: Number(item.stock),
+      quantity: Number(item.quantity),
+    }))
+  }, [])
 
-      if (existingItem) {
-        return currentItems.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-        )
+  const loadMyCart = useCallback(async () => {
+    if (!currentUser) {
+      setCartItems([])
+      return
+    }
+
+    setIsCartSyncing(true)
+    try {
+      const response = await getMyCart()
+      setCartItems(mapCartItemsFromApi(response.items))
+    } catch (error) {
+      if (error.status === 401) {
+        setCurrentUser(null)
+        setCartItems([])
+      } else {
+        setCartFeedback({
+          open: true,
+          message: error.message || 'Failed to load cart.',
+          severity: 'error',
+        })
       }
+    } finally {
+      setIsCartSyncing(false)
+    }
+  }, [currentUser, mapCartItemsFromApi])
 
-      return [...currentItems, { ...product, quantity: 1 }]
-    })
+  useEffect(() => {
+    if (!currentUser) {
+      setCartItems([])
+      return
+    }
 
-    setCartFeedback({
-      open: true,
-      message: `${product.name} aggiunto al carrello`,
-    })
+    loadMyCart()
+  }, [currentUser, loadMyCart])
+
+  const syncCartItemQuantity = async (productId, quantity) => {
+    setIsCartSyncing(true)
+    try {
+      const response =
+        quantity === 0 ? await deleteMyCartItem(productId) : await updateMyCartItem(productId, quantity)
+
+      setCartItems(mapCartItemsFromApi(response.items))
+      return true
+    } catch (error) {
+      setCartFeedback({
+        open: true,
+        message: error.message || 'Cart update failed. Please try again.',
+        severity: 'error',
+      })
+      return false
+    } finally {
+      setIsCartSyncing(false)
+    }
   }
 
-  const handleDecreaseCartItem = (productId) => {
-    setCartItems((currentItems) =>
-      currentItems
-        .map((item) =>
-          item.id === productId ? { ...item, quantity: item.quantity - 1 } : item,
-        )
-        .filter((item) => item.quantity > 0),
-    )
+  const handleAddToCart = async (product) => {
+    if (!currentUser) {
+      setCartFeedback({
+        open: true,
+        message: 'Please sign in to use the cart.',
+        severity: 'info',
+      })
+      navigate('/login')
+      return
+    }
+
+    const existingItem = cartItems.find((item) => item.id === product.id)
+    const nextQuantity = existingItem ? existingItem.quantity + 1 : 1
+    const synced = await syncCartItemQuantity(product.id, nextQuantity)
+
+    if (synced) {
+      setCartFeedback({
+        open: true,
+        message: `${product.name} aggiunto al carrello`,
+        
+        severity: 'success',
+      })
+    }
   }
 
-  const handleIncreaseCartItem = (productId) => {
-    setCartItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === productId ? { ...item, quantity: item.quantity + 1 } : item,
-      ),
-    )
+  const handleDecreaseCartItem = async (productId) => {
+    const item = cartItems.find((entry) => entry.id === productId)
+    if (!item) {
+      return
+    }
+
+    const nextQuantity = item.quantity - 1
+    await syncCartItemQuantity(productId, nextQuantity)
+  }
+
+  const handleIncreaseCartItem = async (productId) => {
+    const item = cartItems.find((entry) => entry.id === productId)
+    if (!item) {
+      return
+    }
+
+    const nextQuantity = item.quantity + 1
+    await syncCartItemQuantity(productId, nextQuantity)
   }
 
   const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0)
@@ -142,7 +222,7 @@ function App() {
       setIsCartOpen(false)
       navigate('/', { replace: true })
     } catch (error) {
-      const message = error.message || 'Errore durante il logout. Riprova.'
+      const message = error.message || 'Logout failed. Please try again.'
       setAuthError(message)
       throw error
     } finally {
@@ -151,83 +231,100 @@ function App() {
   }
 
   const handleOpenCheckout = () => {
+    if (!currentUser) {
+      setCartFeedback({
+        open: true,
+        message: 'Please sign in to continue to checkout.',
+        severity: 'info',
+      })
+      navigate('/login')
+      return
+    }
+
     setIsCartOpen(false)
     navigate('/checkout')
   }
 
-  const handleCheckoutSuccess = () => {
+  const handleCheckoutSuccess = async () => {
     setCartItems([])
     setIsCartOpen(false)
-    reloadProducts({ showLoader: false })
+    await reloadProducts({ showLoader: false })
+    await loadMyCart()
   }
 
   return (
     <>
       <AppLayout
-      cartItems={cartItems}
-      cartItemCount={cartItemCount}
-      cartSubtotal={cartSubtotal}
-      currentUser={currentUser}
-      isAuthBusy={isAuthBusy}
-      authError={authError}
-      isCartOpen={isCartOpen}
-      onCheckout={handleOpenCheckout}
-      onCloseCart={() => setIsCartOpen(false)}
-      onDecreaseFromCart={handleDecreaseCartItem}
-      onIncreaseFromCart={handleIncreaseCartItem}
-      onLogout={handleLogout}
-      onOpenCart={() => setIsCartOpen(true)}
-    >
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <HomePage
-              products={products}
-              productsError={productsError}
-              productsLoading={productsLoading}
-              onAddToCart={handleAddToCart}
-            />
-          }
-        />
-        <Route path="/products/:productId" element={<ProductPage onAddToCart={handleAddToCart} />} />
-        <Route
-          path="/checkout"
-          element={
-            <CheckoutPage
-              cartItems={cartItems}
-              cartSubtotal={cartSubtotal}
-              currentUser={currentUser}
-              isAuthLoading={isAuthLoading}
-              onCheckoutSuccess={handleCheckoutSuccess}
-            />
-          }
-        />
-        <Route
-          path="/orders"
-          element={<OrdersPage currentUser={currentUser} isAuthLoading={isAuthLoading} />}
-        />
-        <Route
-          path="/login"
-          element={
-            <LoginPage
-              currentUser={currentUser}
-              isAuthBusy={isAuthBusy}
-              onLoginSuccess={handleLoginSuccess}
-            />
-          }
-        />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        cartItems={cartItems}
+        cartItemCount={cartItemCount}
+        cartSubtotal={cartSubtotal}
+        currentUser={currentUser}
+        isAuthBusy={isAuthBusy}
+        authError={authError}
+        isCartOpen={isCartOpen}
+        isCartSyncing={isCartSyncing}
+        onCheckout={handleOpenCheckout}
+        onCloseCart={() => setIsCartOpen(false)}
+        onDecreaseFromCart={handleDecreaseCartItem}
+        onIncreaseFromCart={handleIncreaseCartItem}
+        onLogout={handleLogout}
+        onOpenCart={() => setIsCartOpen(true)}
+      >
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <HomePage
+                products={products}
+                productsError={productsError}
+                productsLoading={productsLoading}
+                onAddToCart={handleAddToCart}
+              />
+            }
+          />
+          <Route path="/products/:productId" element={<ProductPage onAddToCart={handleAddToCart} />} />
+          <Route
+            path="/checkout"
+            element={
+              <CheckoutPage
+                cartItems={cartItems}
+                cartSubtotal={cartSubtotal}
+                currentUser={currentUser}
+                isAuthLoading={isAuthLoading}
+                onCheckoutSuccess={handleCheckoutSuccess}
+              />
+            }
+          />
+          <Route
+            path="/orders"
+            element={<OrdersPage currentUser={currentUser} isAuthLoading={isAuthLoading} />}
+          />
+          <Route
+            path="/login"
+            element={
+              <LoginPage
+                currentUser={currentUser}
+                isAuthBusy={isAuthBusy}
+                onLoginSuccess={handleLoginSuccess}
+              />
+            }
+          />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </AppLayout>
       <Snackbar
         open={cartFeedback.open}
         autoHideDuration={1800}
-        onClose={() => setCartFeedback({ open: false, message: '' })}
+        onClose={() =>
+          setCartFeedback((current) => ({
+            ...current,
+            open: false,
+          }))
+        }
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
+        <Alert severity={cartFeedback.severity} variant="filled" sx={{ width: '100%' }}>
           {cartFeedback.message}
         </Alert>
       </Snackbar>

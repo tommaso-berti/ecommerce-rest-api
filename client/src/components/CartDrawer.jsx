@@ -20,6 +20,7 @@ function CartDrawer({
   cartItems,
   cartSubtotal,
   isOpen,
+  isSyncing,
   onCheckout,
   onClose,
   onDecreaseItem,
@@ -30,9 +31,9 @@ function CartDrawer({
       <Box sx={{ width: { xs: 320, sm: 380 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box className="flex items-center justify-between px-6 py-5">
           <Box>
-            <Typography variant="h6">Il tuo carrello</Typography>
+            <Typography variant="h6">Your cart</Typography>
             <Typography variant="body2" color="text.secondary">
-              Rivedi gli articoli selezionati
+              Review your selected items
             </Typography>
           </Box>
           <IconButton onClick={onClose} aria-label="Close cart">
@@ -46,10 +47,10 @@ function CartDrawer({
           <Box className="flex flex-1 flex-col items-center justify-center px-6 text-center">
             <RemoveShoppingCartRoundedIcon color="disabled" sx={{ fontSize: 42, mb: 2 }} />
             <Typography variant="h6" gutterBottom>
-              Carrello vuoto
+              Cart is empty
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Aggiungi qualche prodotto dalla home per iniziare.
+              Add some products from the home page to get started.
             </Typography>
           </Box>
         ) : (
@@ -61,16 +62,24 @@ function CartDrawer({
                   disablePadding
                   secondaryAction={
                     <Box className="flex items-center gap-1">
-                      <Tooltip title="Riduci quantità">
-                        <IconButton size="small" onClick={() => onDecreaseItem(item.id)}>
+                      <Tooltip title="Decrease quantity">
+                        <IconButton
+                          size="small"
+                          onClick={() => onDecreaseItem(item.id)}
+                          disabled={isSyncing}
+                        >
                           <RemoveRoundedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                       <Typography variant="body2" sx={{ minWidth: 28, textAlign: 'center' }}>
                         {item.quantity}
                       </Typography>
-                      <Tooltip title="Aumenta quantità">
-                        <IconButton size="small" onClick={() => onIncreaseItem(item.id)}>
+                      <Tooltip title="Increase quantity">
+                        <IconButton
+                          size="small"
+                          onClick={() => onIncreaseItem(item.id)}
+                          disabled={isSyncing}
+                        >
                           <AddRoundedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -91,13 +100,13 @@ function CartDrawer({
 
             <Stack spacing={2} sx={{ p: 3 }}>
               <Box className="flex items-center justify-between">
-                <Typography variant="subtitle1">Subtotale</Typography>
+                <Typography variant="subtitle1">Subtotal</Typography>
                 <Typography variant="h6" color="primary.main">
                   EUR {cartSubtotal.toFixed(2)}
                 </Typography>
               </Box>
-              <Button variant="contained" size="large" onClick={onCheckout}>
-                Vai al checkout
+              <Button variant="contained" size="large" onClick={onCheckout} disabled={isSyncing}>
+                Go to checkout
               </Button>
             </Stack>
           </>

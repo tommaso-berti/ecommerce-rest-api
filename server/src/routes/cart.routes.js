@@ -1,7 +1,21 @@
 import { Router } from 'express'
-import { createCart, deleteCart, getCartById, updateCart } from '../controllers/cartController.js'
+import {
+  createCart,
+  deleteCart,
+  deleteMyCartItem,
+  getCartById,
+  getMyActiveCart,
+  replaceMyCartItems,
+  updateCart,
+  updateMyCartItem,
+} from '../controllers/cartController.js'
 
 const cartRouter = Router()
+
+cartRouter.get('/cart/me', getMyActiveCart)
+cartRouter.put('/cart/me/items', replaceMyCartItems)
+cartRouter.patch('/cart/me/items/:productId', updateMyCartItem)
+cartRouter.delete('/cart/me/items/:productId', deleteMyCartItem)
 
 /**
  * @openapi

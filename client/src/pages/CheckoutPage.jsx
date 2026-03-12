@@ -15,7 +15,7 @@ function CheckoutPage({ cartItems, cartSubtotal, currentUser, isAuthLoading, onC
       <Box className="flex items-center gap-3 py-8">
         <CircularProgress size={24} />
         <Typography variant="body2" color="text.secondary">
-          Verifica sessione in corso...
+          Verifying session...
         </Typography>
       </Box>
     )
@@ -31,7 +31,7 @@ function CheckoutPage({ cartItems, cartSubtotal, currentUser, isAuthLoading, onC
     }
 
     setErrorMessage('')
-    setPaymentStep('Simulazione pagamento in corso...')
+    setPaymentStep('Simulating payment...')
     setIsPaying(true)
 
     try {
@@ -39,7 +39,7 @@ function CheckoutPage({ cartItems, cartSubtotal, currentUser, isAuthLoading, onC
         setTimeout(resolve, 900)
       })
 
-      setPaymentStep('Pagamento simulato completato, creazione ordine...')
+      setPaymentStep('Payment simulation complete, creating order...')
 
       await performCheckout(
         cartItems.map((item) => ({
@@ -48,10 +48,10 @@ function CheckoutPage({ cartItems, cartSubtotal, currentUser, isAuthLoading, onC
         })),
       )
 
-      onCheckoutSuccess?.()
+      await onCheckoutSuccess?.()
       navigate('/orders', { replace: true })
     } catch (error) {
-      setErrorMessage(error.message || 'Errore durante il checkout. Riprova.')
+      setErrorMessage(error.message || 'Checkout failed. Please try again.')
     } finally {
       setIsPaying(false)
       setPaymentStep('')
@@ -65,7 +65,7 @@ function CheckoutPage({ cartItems, cartSubtotal, currentUser, isAuthLoading, onC
           <Box>
             <Typography variant="h5">Checkout</Typography>
             <Typography variant="body2" color="text.secondary">
-              Riepiloga il carrello e completa il pagamento simulato.
+              Review your cart and complete the simulated payment.
             </Typography>
           </Box>
 
@@ -74,10 +74,10 @@ function CheckoutPage({ cartItems, cartSubtotal, currentUser, isAuthLoading, onC
 
           {cartItems.length === 0 ? (
             <Stack spacing={2}>
-              <Alert severity="warning">Il tuo carrello è vuoto. Aggiungi prodotti prima del checkout.</Alert>
+              <Alert severity="warning">Your cart is empty. Add products before checking out.</Alert>
               <Box>
                 <Button component={Link} to="/" variant="outlined">
-                  Torna alla home
+                  Back to home
                 </Button>
               </Box>
             </Stack>
@@ -108,7 +108,7 @@ function CheckoutPage({ cartItems, cartSubtotal, currentUser, isAuthLoading, onC
               <Divider />
 
               <Box className="flex items-center justify-between">
-                <Typography variant="h6">Totale</Typography>
+                <Typography variant="h6">Total</Typography>
                 <Typography variant="h5" color="primary.main">
                   EUR {cartSubtotal.toFixed(2)}
                 </Typography>
@@ -121,7 +121,7 @@ function CheckoutPage({ cartItems, cartSubtotal, currentUser, isAuthLoading, onC
                 onClick={handlePayment}
                 disabled={isPaying}
               >
-                {isPaying ? 'Elaborazione...' : 'Paga ora'}
+                {isPaying ? 'Processing...' : 'Pay now'}
               </Button>
             </>
           )}

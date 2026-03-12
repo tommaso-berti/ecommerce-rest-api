@@ -80,7 +80,7 @@ function ProductCard({ product, onAddToCart }) {
           startIcon={<AddShoppingCartRoundedIcon />}
           onClick={handleAddToCart}
         >
-          Aggiungi al carrello
+          Add to cart
         </Button>
       </CardActions>
     </Card>

@@ -20,7 +20,7 @@ function formatCurrency(value) {
 
 function formatDate(value) {
   const date = new Date(value)
-  return date.toLocaleString('it-IT')
+  return date.toLocaleString('en-US')
 }
 
 function OrdersPage({ currentUser, isAuthLoading }) {
@@ -53,7 +53,7 @@ function OrdersPage({ currentUser, isAuthLoading }) {
         }
 
         setOrders([])
-        setErrorMessage(error.message || 'Errore nel caricamento ordini.')
+        setErrorMessage(error.message || 'Failed to load orders.')
       } finally {
         if (isMounted) {
           setIsLoading(false)
@@ -98,7 +98,7 @@ function OrdersPage({ currentUser, isAuthLoading }) {
         ...current,
         [orderId]: {
           isLoading: false,
-          error: error.message || 'Errore nel caricamento dettaglio ordine.',
+          error: error.message || 'Failed to load order details.',
           items: null,
         },
       }))
@@ -110,7 +110,7 @@ function OrdersPage({ currentUser, isAuthLoading }) {
       <Box className="flex items-center gap-3 py-8">
         <CircularProgress size={24} />
         <Typography variant="body2" color="text.secondary">
-          Verifica sessione in corso...
+          Verifying session...
         </Typography>
       </Box>
     )
@@ -127,7 +127,7 @@ function OrdersPage({ currentUser, isAuthLoading }) {
           <Box>
             <Typography variant="h5">I miei ordini</Typography>
             <Typography variant="body2" color="text.secondary">
-              Consulta lo storico ordini e apri i dettagli delle righe prodotto.
+              Review your order history and expand items for details.
             </Typography>
           </Box>
 
@@ -135,7 +135,7 @@ function OrdersPage({ currentUser, isAuthLoading }) {
             <Box className="flex items-center gap-3 py-2">
               <CircularProgress size={24} />
               <Typography variant="body2" color="text.secondary">
-                Caricamento ordini...
+                Loading orders...
               </Typography>
             </Box>
           ) : null}
@@ -143,7 +143,7 @@ function OrdersPage({ currentUser, isAuthLoading }) {
           {!isLoading && errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
           {!isLoading && !errorMessage && orders.length === 0 ? (
-            <Alert severity="info">Non hai ancora creato ordini.</Alert>
+            <Alert severity="info">You have not created any orders yet.</Alert>
           ) : null}
 
           {!isLoading && !errorMessage && orders.length > 0 ? (
@@ -170,7 +170,7 @@ function OrdersPage({ currentUser, isAuthLoading }) {
                           {formatDate(order.created_at)}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          Stato: {order.status}
+                          Status: {order.status}
                         </Typography>
                         <Typography variant="subtitle2" color="primary.main">
                           {formatCurrency(order.total_amount)}
@@ -182,7 +182,7 @@ function OrdersPage({ currentUser, isAuthLoading }) {
                         <Box className="flex items-center gap-3 py-1">
                           <CircularProgress size={20} />
                           <Typography variant="body2" color="text.secondary">
-                            Caricamento dettagli ordine...
+                            Loading order details...
                           </Typography>
                         </Box>
                       ) : null}
@@ -198,7 +198,7 @@ function OrdersPage({ currentUser, isAuthLoading }) {
                               sx={{ py: 0.75, borderBottom: '1px solid #f1f5f9' }}
                             >
                               <Typography variant="body2">
-                                {item.product_name || `Prodotto #${item.product_id}`}
+                                {item.product_name || `Product #${item.product_id}`}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
                                 Qty {item.quantity}

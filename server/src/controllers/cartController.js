@@ -28,6 +28,46 @@ const deleteCartQuery = `
   RETURNING id, user_id, status, created_at
 `
 
+const selectActiveCartByUserIdQuery = `
+  SELECT id, user_id, status, created_at
+  FROM carts
+  WHERE user_id = $1 AND status = 'active'
+  LIMIT 1
+`
+
+const selectActiveCartByUserIdForUpdateQuery = `
+  SELECT id, user_id, status, created_at
+  FROM carts
+  WHERE user_id = $1 AND status = 'active'
+  LIMIT 1
+  FOR UPDATE
+`
+
+const selectCartItemsWithProductsQuery = `
+  SELECT ci.id, ci.product_id, ci.quantity, p.name, p.description, p.price, p.stock
+  FROM cart_items ci
+  JOIN products p ON p.id = ci.product_id
+  WHERE ci.cart_id = $1
+  ORDER BY ci.id ASC
+`
+
+const clearCartItemsQuery = `
+  DELETE FROM cart_items
+  WHERE cart_id = $1
+`
+
+const upsertCartItemQuery = `
+  INSERT INTO cart_items (cart_id, product_id, quantity)
+  VALUES ($1, $2, $3)
+  ON CONFLICT (cart_id, product_id)
+  DO UPDATE SET quantity = EXCLUDED.quantity
+`
+
+const deleteCartItemByProductIdQuery = `
+  DELETE FROM cart_items
+  WHERE cart_id = $1 AND product_id = $2
+`
+
 function parseCartId(cartIdParam) {
   const cartId = Number(cartIdParam)
   if (!Number.isInteger(cartId) || cartId <= 0) {
@@ -53,6 +93,89 @@ function parseStatus(statusValue) {
     return null
   }
   return status
+}
+
+function parseAuthUserId(req) {
+  if (!req.isAuthenticated?.() || !req.user?.id) {
+    return null
+  }
+
+  return parseUserId(req.user.id)
+}
+
+function parseProductId(productIdValue) {
+  const productId = Number(productIdValue)
+  if (!Number.isInteger(productId) || productId <= 0) {
+    return null
+  }
+  return productId
+}
+
+function parseQuantity(quantityValue) {
+  const quantity = Number(quantityValue)
+  if (!Number.isInteger(quantity) || quantity < 0) {
+    return null
+  }
+  return quantity
+}
+
+function validateItemsPayload(items) {
+  if (!Array.isArray(items)) {
+    return { error: 'items must be an array' }
+  }
+
+  const quantitiesByProductId = new Map()
+
+  for (const item of items) {
+    const productId = parseProductId(item?.product_id)
+    const quantity = parseQuantity(item?.quantity)
+
+    if (!productId) {
+      return { error: 'invalid product_id in items' }
+    }
+
+    if (quantity === null || quantity <= 0) {
+      return { error: 'invalid quantity in items' }
+    }
+
+    const currentQuantity = quantitiesByProductId.get(productId) || 0
+    quantitiesByProductId.set(productId, currentQuantity + quantity)
+  }
+
+  return {
+    items: Array.from(quantitiesByProductId.entries()).map(([product_id, quantity]) => ({
+      product_id,
+      quantity,
+    })),
+  }
+}
+
+async function getOrCreateActiveCart(client, userId, { lock = false } = {}) {
+  const query = lock ? selectActiveCartByUserIdForUpdateQuery : selectActiveCartByUserIdQuery
+  const existingResult = await client.query(query, [userId])
+  const existingCart = existingResult.rows[0]
+
+  if (existingCart) {
+    return existingCart
+  }
+
+  const createdResult = await client.query(insertCartQuery, [userId, 'active'])
+  return createdResult.rows[0]
+}
+
+async function readCartPayload(client, cart) {
+  const itemsResult = await client.query(selectCartItemsWithProductsQuery, [cart.id])
+  const items = itemsResult.rows
+  const subtotal = items.reduce(
+    (total, item) => total + Number(item.price) * Number(item.quantity),
+    0,
+  )
+
+  return {
+    cart,
+    items,
+    subtotal,
+  }
 }
 
 export async function getCartById(req, res, next) {
@@ -156,3 +279,135 @@ export async function deleteCart(req, res, next) {
   }
 }
 
+export async function getMyActiveCart(req, res, next) {
+  try {
+    const userId = parseAuthUserId(req)
+    if (!userId) {
+      return res.status(401).json({ message: 'not authenticated' })
+    }
+
+    const cart = await getOrCreateActiveCart(pool, userId)
+    const payload = await readCartPayload(pool, cart)
+    return res.status(200).json(payload)
+  } catch (error) {
+    return next(error)
+  }
+}
+
+export async function replaceMyCartItems(req, res, next) {
+  const userId = parseAuthUserId(req)
+  if (!userId) {
+    return res.status(401).json({ message: 'not authenticated' })
+  }
+
+  const parsed = validateItemsPayload(req.body?.items)
+  if (parsed.error) {
+    return res.status(400).json({ message: parsed.error })
+  }
+
+  const client = await pool.connect()
+
+  try {
+    await client.query('BEGIN')
+
+    const cart = await getOrCreateActiveCart(client, userId, { lock: true })
+    await client.query(clearCartItemsQuery, [cart.id])
+
+    for (const item of parsed.items) {
+      await client.query(upsertCartItemQuery, [cart.id, item.product_id, item.quantity])
+    }
+
+    const payload = await readCartPayload(client, cart)
+    await client.query('COMMIT')
+
+    return res.status(200).json(payload)
+  } catch (error) {
+    await client.query('ROLLBACK')
+
+    if (error.code === '23503') {
+      return res.status(400).json({ message: 'invalid product_id in items' })
+    }
+
+    return next(error)
+  } finally {
+    client.release()
+  }
+}
+
+export async function updateMyCartItem(req, res, next) {
+  const userId = parseAuthUserId(req)
+  if (!userId) {
+    return res.status(401).json({ message: 'not authenticated' })
+  }
+
+  const productId = parseProductId(req.params.productId)
+  const quantity = parseQuantity(req.body?.quantity)
+
+  if (!productId) {
+    return res.status(400).json({ message: 'invalid product id' })
+  }
+
+  if (quantity === null) {
+    return res.status(400).json({ message: 'invalid quantity' })
+  }
+
+  const client = await pool.connect()
+
+  try {
+    await client.query('BEGIN')
+
+    const cart = await getOrCreateActiveCart(client, userId, { lock: true })
+
+    if (quantity === 0) {
+      await client.query(deleteCartItemByProductIdQuery, [cart.id, productId])
+    } else {
+      await client.query(upsertCartItemQuery, [cart.id, productId, quantity])
+    }
+
+    const payload = await readCartPayload(client, cart)
+    await client.query('COMMIT')
+
+    return res.status(200).json(payload)
+  } catch (error) {
+    await client.query('ROLLBACK')
+
+    if (error.code === '23503') {
+      return res.status(400).json({ message: 'invalid product id' })
+    }
+
+    return next(error)
+  } finally {
+    client.release()
+  }
+}
+
+export async function deleteMyCartItem(req, res, next) {
+  const userId = parseAuthUserId(req)
+  if (!userId) {
+    return res.status(401).json({ message: 'not authenticated' })
+  }
+
+  const productId = parseProductId(req.params.productId)
+  if (!productId) {
+    return res.status(400).json({ message: 'invalid product id' })
+  }
+
+  const client = await pool.connect()
+
+  try {
+    await client.query('BEGIN')
+
+    const cart = await getOrCreateActiveCart(client, userId, { lock: true })
+    await client.query(deleteCartItemByProductIdQuery, [cart.id, productId])
+
+    const payload = await readCartPayload(client, cart)
+    await client.query('COMMIT')
+
+    return res.status(200).json(payload)
+  } catch (error) {
+    await client.query('ROLLBACK')
+    return next(error)
+  } finally {
+    client.release()
+  }
+}
