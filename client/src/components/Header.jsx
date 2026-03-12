@@ -1,3 +1,4 @@
+import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded'
 import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded'
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded'
 import {
@@ -7,28 +8,37 @@ import {
   Button,
   Container,
   IconButton,
+  Menu,
+  MenuItem,
   Toolbar,
   Typography,
 } from '@mui/material'
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 
 const baseNavItems = [
   { label: 'Home', to: '/' },
 ]
 
-const authNavItems = [
-  { label: 'Orders', to: '/orders' },
-]
-
-const guestNavItems = [
-  { label: 'Login', to: '/login' },
-  { label: 'Register', to: '/register' },
-]
-
 function Header({ authError, cartItemCount, currentUser, isAuthBusy, onLogout, onOpenCart }) {
+  const navigate = useNavigate()
   const [localLogoutError, setLocalLogoutError] = useState('')
+  const [accountAnchorEl, setAccountAnchorEl] = useState(null)
   const isAuthenticated = Boolean(currentUser)
+  const isAccountMenuOpen = Boolean(accountAnchorEl)
+
+  const closeAccountMenu = () => {
+    setAccountAnchorEl(null)
+  }
+
+  const handleOpenAccountMenu = (event) => {
+    setAccountAnchorEl(event.currentTarget)
+  }
+
+  const handleNavigateFromMenu = (to) => {
+    closeAccountMenu()
+    navigate(to)
+  }
 
   const handleLogoutClick = async () => {
     if (!onLogout || isAuthBusy) {
@@ -39,6 +49,7 @@ function Header({ authError, cartItemCount, currentUser, isAuthBusy, onLogout, o
 
     try {
       await onLogout()
+      closeAccountMenu()
     } catch (error) {
       setLocalLogoutError(error.message || 'Logout failed. Please try again.')
     }
@@ -91,59 +102,6 @@ function Header({ authError, cartItemCount, currentUser, isAuthBusy, onLogout, o
                 {item.label}
               </Button>
             ))}
-
-            {isAuthenticated ? (
-              <>
-                {authNavItems.map((item) => (
-                  <Button
-                    key={item.to}
-                    component={NavLink}
-                    to={item.to}
-                    color="inherit"
-                    sx={{
-                      px: 2,
-                      color: 'text.secondary',
-                      '&.active': {
-                        color: 'primary.main',
-                        bgcolor: 'rgba(15, 118, 110, 0.08)',
-                      },
-                    }}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-                <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>
-                  {currentUser.username}
-                </Typography>
-                <Button
-                  color="inherit"
-                  onClick={handleLogoutClick}
-                  disabled={isAuthBusy}
-                  sx={{ px: 2, color: 'text.secondary' }}
-                >
-                  {isAuthBusy ? 'Logout...' : 'Logout'}
-                </Button>
-              </>
-            ) : (
-              guestNavItems.map((item) => (
-                <Button
-                  key={item.to}
-                  component={NavLink}
-                  to={item.to}
-                  color="inherit"
-                  sx={{
-                    px: 2,
-                    color: 'text.secondary',
-                    '&.active': {
-                      color: 'primary.main',
-                      bgcolor: 'rgba(15, 118, 110, 0.08)',
-                    },
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))
-            )}
           </Box>
 
           <Box className="flex items-center gap-2">
@@ -152,6 +110,40 @@ function Header({ authError, cartItemCount, currentUser, isAuthBusy, onLogout, o
                 {localLogoutError || authError}
               </Typography>
             ) : null}
+            <IconButton
+              color="primary"
+              onClick={handleOpenAccountMenu}
+              aria-label="Open account menu"
+            >
+              <AccountCircleRoundedIcon />
+            </IconButton>
+            <Menu
+              anchorEl={accountAnchorEl}
+              open={isAccountMenuOpen}
+              onClose={closeAccountMenu}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              {isAuthenticated ? (
+                [
+                  <MenuItem key="orders" onClick={() => handleNavigateFromMenu('/orders')}>
+                    My Orders
+                  </MenuItem>,
+                  <MenuItem key="logout" onClick={handleLogoutClick} disabled={isAuthBusy}>
+                    {isAuthBusy ? 'Logging out...' : 'Logout'}
+                  </MenuItem>,
+                ]
+              ) : (
+                [
+                  <MenuItem key="login" onClick={() => handleNavigateFromMenu('/login')}>
+                    Login
+                  </MenuItem>,
+                  <MenuItem key="register" onClick={() => handleNavigateFromMenu('/register')}>
+                    Register
+                  </MenuItem>,
+                ]
+              )}
+            </Menu>
             <IconButton color="primary" onClick={onOpenCart} aria-label="Open cart">
               <Badge badgeContent={cartItemCount} color="secondary">
                 <ShoppingCartRoundedIcon />
