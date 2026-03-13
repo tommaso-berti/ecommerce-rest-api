@@ -51,8 +51,8 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf _backend_release backend-release.tgz
-          mkdir -p _backend_release/database
           rsync -a --delete server/ _backend_release/
+          mkdir -p _backend_release/database
           cp database/schema.sql _backend_release/database/schema.sql
           tar -czf backend-release.tgz -C _backend_release .
 
