@@ -24,6 +24,17 @@ This setup keeps frontend and backend on the same domain:
 
 ## 2) Manual VPS operations (run once)
 
+0. Optional: clone repository for templates/manual files
+
+You do not need a permanent clone on VPS for automated deploys.  
+If you want to copy template files easily, use:
+
+```bash
+sudo mkdir -p /srv/webapps/shop.tommasoberti.com/repo
+sudo chown -R "$USER:$USER" /srv/webapps/shop.tommasoberti.com/repo
+git clone <YOUR_REPO_URL> /srv/webapps/shop.tommasoberti.com/repo
+```
+
 1. Create service user:
 
 ```bash
@@ -59,7 +70,7 @@ GRANT ALL PRIVILEGES ON DATABASE shop_tommasoberti TO shop_app;
 5. Create backend env file:
 
 ```bash
-sudo cp /path/to/repo/deploy/backend.env.example /srv/webapps/shop.tommasoberti.com/backend/shared/.env
+sudo cp /srv/webapps/shop.tommasoberti.com/repo/deploy/backend.env.example /srv/webapps/shop.tommasoberti.com/backend/shared/.env
 sudo chown shop:shop /srv/webapps/shop.tommasoberti.com/backend/shared/.env
 sudo chmod 600 /srv/webapps/shop.tommasoberti.com/backend/shared/.env
 sudo nano /srv/webapps/shop.tommasoberti.com/backend/shared/.env
@@ -68,7 +79,7 @@ sudo nano /srv/webapps/shop.tommasoberti.com/backend/shared/.env
 6. Install Caddy site config:
 
 ```bash
-sudo cp /path/to/repo/deploy/caddy/shop.tommasoberti.com.caddy /etc/caddy/sites-enabled/shop.tommasoberti.com.caddy
+sudo cp /srv/webapps/shop.tommasoberti.com/repo/deploy/caddy/shop.tommasoberti.com.caddy /etc/caddy/sites-enabled/shop.tommasoberti.com.caddy
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
@@ -76,7 +87,7 @@ sudo systemctl reload caddy
 7. Install backend systemd service:
 
 ```bash
-sudo cp /path/to/repo/deploy/systemd/shop-tommasoberti-backend.service /etc/systemd/system/shop-tommasoberti-backend.service
+sudo cp /srv/webapps/shop.tommasoberti.com/repo/deploy/systemd/shop-tommasoberti-backend.service /etc/systemd/system/shop-tommasoberti-backend.service
 sudo systemctl daemon-reload
 sudo systemctl enable shop-tommasoberti-backend
 sudo systemctl restart shop-tommasoberti-backend
@@ -86,6 +97,13 @@ sudo systemctl restart shop-tommasoberti-backend
 
 - Frontend workflow: `.github/workflows/deploy-frontend.yml`
 - Backend workflow: `.github/workflows/deploy-backend.yml`
+
+Deploy target paths used by GitHub Actions:
+
+- frontend deploys to `/srv/webapps/shop.tommasoberti.com/frontend/releases/...`
+- backend deploys to `/srv/webapps/shop.tommasoberti.com/backend/releases/...`
+
+The optional `/srv/webapps/shop.tommasoberti.com/repo` clone is not used at runtime.
 
 Required GitHub secrets:
 
@@ -118,4 +136,12 @@ sudo systemctl status shop-tommasoberti-backend
 readlink -f /srv/webapps/shop.tommasoberti.com/frontend/current
 readlink -f /srv/webapps/shop.tommasoberti.com/backend/current
 journalctl -u shop-tommasoberti-backend -f
+```
+
+## 6) Optional cleanup after automation works
+
+Once Actions deploy correctly and both `current` symlinks are healthy, you can remove the temporary clone:
+
+```bash
+rm -rf /srv/webapps/shop.tommasoberti.com/repo
 ```
