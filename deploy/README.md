@@ -127,7 +127,7 @@ Required GitHub secrets:
 
 - `VPS_HOST`
 - `VPS_USER`
-- `VPS_SSH_KEY`
+- `VPS_SSH_KEY_SHOP`
 
 ## 4) How schema and sample data are loaded
 
