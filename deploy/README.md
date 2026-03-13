@@ -67,6 +67,9 @@ GRANT ALL PRIVILEGES ON DATABASE shop_tommasoberti TO shop_app;
 \q
 ```
 
+`CHANGE_ME_STRONG_PASSWORD` is the real PostgreSQL password for `shop_app`.
+Use the same exact value later in `.env` as `DB_PASSWORD`.
+
 5. Create backend env file:
 
 ```bash
@@ -74,6 +77,21 @@ sudo cp /srv/webapps/shop.tommasoberti.com/repo/deploy/backend.env.example /srv/
 sudo chown shop:shop /srv/webapps/shop.tommasoberti.com/backend/shared/.env
 sudo chmod 600 /srv/webapps/shop.tommasoberti.com/backend/shared/.env
 sudo nano /srv/webapps/shop.tommasoberti.com/backend/shared/.env
+```
+
+Inside `/srv/webapps/shop.tommasoberti.com/backend/shared/.env`:
+
+- set `DB_PASSWORD` to the same password used in `CREATE USER shop_app ... PASSWORD '...'`
+- generate `SESSION_SECRET` with:
+
+```bash
+openssl rand -hex 64
+```
+
+and paste the output as:
+
+```env
+SESSION_SECRET=<generated-value>
 ```
 
 6. Install Caddy site config:
