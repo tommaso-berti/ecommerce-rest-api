@@ -23,13 +23,19 @@ dotenv.config({ path: rootEnvPath })
 const app = express()
 setupPassport()
 const isProduction = process.env.NODE_ENV === 'production'
+const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
 
 if (isProduction) {
   // Required behind reverse proxies (Caddy/Nginx) so secure session cookies work correctly.
   app.set('trust proxy', 1)
 }
 
-app.use(cors())
+app.use(
+  cors({
+    origin: clientOrigin,
+    credentials: true,
+  }),
+)
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))

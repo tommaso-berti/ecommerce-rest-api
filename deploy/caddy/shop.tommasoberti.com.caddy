@@ -1,4 +1,4 @@
-shop.tommasoberti.com {
+www.shop.tommasoberti.com, shop.tommasoberti.com {
     encode gzip zstd
 
     handle /api/* {

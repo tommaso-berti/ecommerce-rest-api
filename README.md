@@ -1,14 +1,39 @@
-# E-commerce REST API Monorepo
+# E-commerce Demo Monorepo
 
-Project structure:
+Full-stack demo e-commerce app with:
+
+- React + Vite frontend
+- Node.js + Express backend
+- PostgreSQL database
+- Session auth (local + optional Google OAuth)
+- Caddy + systemd VPS deploy (same domain, API under `/api`)
+
+Live demo target:
+
+- `https://shop.tommasoberti.com`
+
+## Repository structure
 
 ```text
 .
-├── client/   # React + Vite frontend
-└── server/   # Node.js + Express + PostgreSQL backend
+├── client/               # React + Vite frontend
+├── server/               # Express API + auth + business logic
+├── database/schema.sql   # schema + seed data for demo
+├── deploy/               # VPS templates and deploy runbook
+└── .github/workflows/    # frontend/backend deploy pipelines
 ```
 
-## Run Commands
+## Technology stack
+
+- Frontend: React 19, Vite, React Router, MUI, Tailwind
+- Backend: Node.js (ESM), Express 5, Passport, express-session
+- Database: PostgreSQL (`pg`)
+- Reverse proxy/web server: Caddy
+- Process manager: systemd
+- CI/CD: GitHub Actions (versioned releases + symlink activation)
+- Tooling assistance: OpenAI Codex (GPT-5.3 Codex) was used to define/refine deploy automation and documentation
+
+## Local development
 
 From repository root:
 
@@ -17,14 +42,40 @@ From repository root:
 - `npm run dev:server`
 - `npm run start:server`
 
-Direct package commands:
+Or directly:
 
 - `cd client && npm run dev`
 - `cd server && npm run dev`
 
+## Production demo deployment
+
+The complete VPS runbook is here:
+
+- [deploy/README.md](./deploy/README.md)
+- Includes a dedicated "Public repository security checklist"
+
+Key deployment principles used in this project:
+
+- single domain for frontend and backend
+- backend exposed only through Caddy proxy on `/api/*`
+- backend process on `127.0.0.1:3001`
+- versioned releases in `/srv/webapps/shop.tommasoberti.com`
+- demo database reset on each backend deploy
+
+## How this demo was built
+
+- Frontend deploy workflow: `.github/workflows/deploy-frontend.yml`
+- Backend deploy workflow: `.github/workflows/deploy-backend.yml`
+- Caddy site config template: `deploy/caddy/shop.tommasoberti.com.caddy`
+- Backend service template: `deploy/systemd/shop-tommasoberti-backend.service`
+- Runtime service name: `shop-tommasoberti-backend`
+- Runtime folders:
+  - `/srv/webapps/shop.tommasoberti.com/frontend`
+  - `/srv/webapps/shop.tommasoberti.com/backend`
+
 ## Swagger / OpenAPI
 
-With backend running (`cd server && npm run dev`):
+With backend running:
 
 - Swagger UI: `http://localhost:3001/api-docs`
 - OpenAPI JSON: `http://localhost:3001/api-docs.json`
