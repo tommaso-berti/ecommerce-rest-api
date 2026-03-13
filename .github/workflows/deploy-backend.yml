@@ -1,0 +1,150 @@
+name: Deploy shop.tommasoberti.com backend (versioned demo reset)
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    types: [closed]
+    branches: ["main"]
+
+concurrency:
+  group: deploy-shop-tommasoberti-backend
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: "npm"
+          cache-dependency-path: server/package-lock.json
+
+      - name: Resolve VERSION
+        shell: bash
+        run: |
+          V=$( [ -f VERSION ] && tr -d ' \n\r' < VERSION || node -p "require('./package.json').version" )
+          V=${V#v}
+          echo "VERSION=$V" >> $GITHUB_ENV
+          echo "RELEASE_DIR=v$V" >> $GITHUB_ENV
+
+      - name: Skip deploy on PR
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Pull request run: skipping deploy (no secrets available)."
+          exit 0
+
+      - name: Prepare env
+        run: |
+          echo "SITE_DOMAIN=shop.tommasoberti.com" >> $GITHUB_ENV
+          echo "REMOTE_BASE=/srv/webapps/shop.tommasoberti.com/backend" >> $GITHUB_ENV
+          echo "REMOTE_RELEASE=/srv/webapps/shop.tommasoberti.com/backend/releases/${{ env.RELEASE_DIR }}" >> $GITHUB_ENV
+
+      - name: Prepare backend release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _backend_release backend-release.tgz
+          mkdir -p _backend_release/database
+          rsync -a --delete server/ _backend_release/
+          cp database/schema.sql _backend_release/database/schema.sql
+          tar -czf backend-release.tgz -C _backend_release .
+
+      - name: Prepare SSH key (debug first)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "Missing secret VPS_SSH_KEY"; exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+
+          tr -d '\r' < ~/.ssh/deploy_key > ~/.ssh/_tmp && mv ~/.ssh/_tmp ~/.ssh/deploy_key
+          if [ "$(wc -l < ~/.ssh/deploy_key)" -eq 1 ] && grep -q '\\n' ~/.ssh/deploy_key; then
+            sed 's/\\n/\n/g' ~/.ssh/deploy_key > ~/.ssh/_tmp && mv ~/.ssh/_tmp ~/.ssh/deploy_key
+          fi
+          awk 'NR==1{sub(/^\xef\xbb\xbf/,"")}1' ~/.ssh/deploy_key > ~/.ssh/_tmp && mv ~/.ssh/_tmp ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          ssh-keygen -y -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub
+          ssh-keygen -lf ~/.ssh/deploy_key.pub
+
+      - name: Add server host key to known_hosts
+        run: |
+          ssh-keyscan -H -t ed25519 "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -H -t rsa     "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Test SSH connection
+        run: |
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey \
+              -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" true
+
+      - name: Ensure remote release dir
+        shell: bash
+        run: |
+          ssh -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "mkdir -p '${{ env.REMOTE_RELEASE }}'"
+
+      - name: Upload backend archive
+        shell: bash
+        run: |
+          rsync -az \
+            -e "ssh -o IdentitiesOnly=yes -i ~/.ssh/deploy_key" \
+            "backend-release.tgz" \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.REMOTE_RELEASE }}/backend-release.tgz"
+
+      - name: Extract archive and install production deps
+        shell: bash
+        run: |
+          ssh -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" '
+            set -e
+            cd "'"${{ env.REMOTE_RELEASE }}"'"
+            tar -xzf backend-release.tgz
+            rm -f backend-release.tgz
+            npm ci --omit=dev
+            echo "'"${{ env.VERSION }}"'" > VERSION
+          '
+
+      - name: Activate release, reset DB and restart service
+        shell: bash
+        run: |
+          ssh -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" '
+            set -e
+            REMOTE_BASE="'"${{ env.REMOTE_BASE }}"'"
+            REMOTE_RELEASE="'"${{ env.REMOTE_RELEASE }}"'"
+
+            if [ -d "$REMOTE_BASE/current" ] && [ ! -L "$REMOTE_BASE/current" ]; then
+              mv "$REMOTE_BASE/current" "$REMOTE_BASE/current.bak.$(date +%s)"
+            fi
+            ln -sfn "$REMOTE_RELEASE" "$REMOTE_BASE/current"
+
+            set -a
+            . "$REMOTE_BASE/shared/.env"
+            set +a
+
+            PGPASSWORD="$DB_PASSWORD" psql \
+              -h "$DB_HOST" \
+              -p "$DB_PORT" \
+              -U "$DB_USER" \
+              -d "$DB_NAME" \
+              -f "$REMOTE_BASE/current/database/schema.sql"
+
+            sudo -n systemctl restart shop-tommasoberti-backend
+          '
+
+      - name: Prune old releases (keep last 5)
+        shell: bash
+        run: |
+          ssh -o IdentitiesOnly=yes -i ~/.ssh/deploy_key "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" '
+            set -e
+            cd "'"${{ env.REMOTE_BASE }}"'/releases" 2>/dev/null || exit 0
+            ls -1dt v* 2>/dev/null | tail -n +6 | xargs -r rm -rf --
+          '

@@ -1,0 +1,20 @@
+[Unit]
+Description=Shop Tommaso Berti Backend
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=shop
+Group=shop
+WorkingDirectory=/srv/webapps/shop.tommasoberti.com/backend/current
+EnvironmentFile=/srv/webapps/shop.tommasoberti.com/backend/shared/.env
+ExecStart=/usr/bin/node /srv/webapps/shop.tommasoberti.com/backend/current/src/server.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=shop-tommasoberti-backend
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,21 @@
+shop.tommasoberti.com {
+    encode gzip zstd
+
+    handle /api/* {
+        reverse_proxy 127.0.0.1:3001
+    }
+
+    handle /api-docs* {
+        reverse_proxy 127.0.0.1:3001
+    }
+
+    handle /api-docs.json {
+        reverse_proxy 127.0.0.1:3001
+    }
+
+    handle {
+        root * /srv/webapps/shop.tommasoberti.com/frontend/current
+        try_files {path} /index.html
+        file_server
+    }
+}
