@@ -22,6 +22,12 @@ dotenv.config({ path: rootEnvPath })
 
 const app = express()
 setupPassport()
+const isProduction = process.env.NODE_ENV === 'production'
+
+if (isProduction) {
+  // Required behind reverse proxies (Caddy/Nginx) so secure session cookies work correctly.
+  app.set('trust proxy', 1)
+}
 
 app.use(cors())
 app.use(morgan('dev'))
@@ -30,12 +36,13 @@ app.use(express.urlencoded({ extended: true }))
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'dev-session-secret',
+    proxy: isProduction,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       maxAge: 1000 * 60 * 60 * 24,
     },
   }),
