@@ -129,6 +129,47 @@ Required GitHub secrets:
 - `VPS_USER`
 - `VPS_SSH_KEY_SHOP`
 
+### SSH key setup for this project (manual, recommended)
+
+Generate a dedicated key on your local machine:
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-shop" -f ~/.ssh/shop_deploy_key
+```
+
+Print the public key:
+
+```bash
+cat ~/.ssh/shop_deploy_key.pub
+```
+
+Then on VPS, add it to `deploy` user:
+
+```bash
+sudo mkdir -p /home/deploy/.ssh
+sudo chmod 700 /home/deploy/.ssh
+sudo nano /home/deploy/.ssh/authorized_keys
+```
+
+Paste the full public key in a new line, save, then:
+
+```bash
+sudo chmod 600 /home/deploy/.ssh/authorized_keys
+sudo chown -R deploy:deploy /home/deploy/.ssh
+```
+
+Test from local machine:
+
+```bash
+ssh -i ~/.ssh/shop_deploy_key deploy@<VPS_HOST> "echo ok"
+```
+
+Set secret `VPS_SSH_KEY_SHOP` with the private key content:
+
+```bash
+cat ~/.ssh/shop_deploy_key
+```
+
 ## 4) How schema and sample data are loaded
 
 Your backend code resets DB only in development (`NODE_ENV=development`).
